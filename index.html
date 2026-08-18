@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>VagasSP - Buscador Inteligente de Vagas</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts & FontAwesome -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#1e3a8a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .hide-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col items-center justify-start pb-20">
+
+  <!-- TOP HEADER (MOBILE FIRST) -->
+  <header class="w-full max-w-md bg-brand-700 text-white p-4 sticky top-0 z-30 shadow-md rounded-b-2xl">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="w-9 h-9 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center font-bold text-white text-lg">
+          <i class="fa-solid fa-briefcase"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-lg leading-none">VagasSP Mobile</h1>
+          <p class="text-xs text-brand-100 font-medium">Buscador Inteligente • SP & Remoto</p>
+        </div>
+      </div>
+      <div id="status-badge" class="bg-emerald-500/20 text-emerald-200 border border-emerald-400/30 text-[10px] font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5">
+        <span class="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span> Scraper Pronto
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="w-full max-w-md px-4 pt-4 space-y-4">
+
+    <!-- SEARCH & FILTER FORM -->
+    <section class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 space-y-3">
+      <div>
+        <label for="input-keywords" class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
+          Cargo ou Palavras-Chave
+        </label>
+        <div class="relative">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+          <input 
+            type="text" 
+            id="input-keywords" 
+            placeholder="Ex: Analista de Marketing, Vendas, RH" 
+            class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-600 focus:bg-white transition"
+          />
+        </div>
+        <p class="text-[11px] text-slate-400 mt-1">Dica: Separe diferentes cargos com vírgula.</p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label for="select-modality" class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
+            Modalidade
+          </label>
+          <select id="select-modality" class="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-brand-600">
+            <option value="all">SP e Remoto Brasil</option>
+            <option value="sp">Apenas SP (Híbrido/Pres.)</option>
+            <option value="remote">Apenas Remoto</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="select-source" class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
+            Plataforma
+          </label>
+          <select id="select-source" class="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-brand-600">
+            <option value="all">Todas as Fontes</option>
+            <option value="linkedin">LinkedIn Jobs</option>
+            <option value="gupy">Gupy & Portais</option>
+          </select>
+        </div>
+      </div>
+
+      <button 
+        id="btn-search" 
+        onclick="executeSearch()"
+        class="w-full bg-brand-600 hover:bg-brand-700 active:scale-[0.98] text-white font-bold py-3 rounded-xl shadow-md shadow-brand-500/20 flex items-center justify-center gap-2 text-sm transition"
+      >
+        <i class="fa-solid fa-bolt"></i> Localizar Oportunidades
+      </button>
+    </section>
+
+    <!-- QUICK PRESETS / SUGGESTIONS -->
+    <section class="space-y-1.5">
+      <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Buscas Rápidas SP:</span>
+      <div class="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
+        <button onclick="setQuickSearch('Analista de Marketing')" class="whitespace-nowrap px-3 py-1.5 bg-white border border-slate-200 rounded-full text-xs font-medium text-slate-700 hover:border-brand-500 transition">
+          📢 Marketing
+        </button>
+        <button onclick="setQuickSearch('Recursos Humanos, R&S')" class="whitespace-nowrap px-3 py-1.5 bg-white border border-slate-200 rounded-full text-xs font-medium text-slate-700 hover:border-brand-500 transition">
+          👥 RH / Recrutamento
+        </button>
+        <button onclick="setQuickSearch('Atendimento ao Cliente, Suporte')" class="whitespace-nowrap px-3 py-1.5 bg-white border border-slate-200 rounded-full text-xs font-medium text-slate-700 hover:border-brand-500 transition">
+          🎧 Atendimento / CS
+        </button>
+        <button onclick="setQuickSearch('Vendas, Comercial')" class="whitespace-nowrap px-3 py-1.5 bg-white border border-slate-200 rounded-full text-xs font-medium text-slate-700 hover:border-brand-500 transition">
+          💼 Vendas
+        </button>
+      </div>
+    </section>
+
+    <!-- TABS (RESULTADOS / FAVORITOS / GERADOR BOOLEANO) -->
+    <div class="flex border-b border-slate-200 text-xs font-bold">
+      <button id="tab-btn-results" onclick="switchTab('results')" class="flex-1 py-2.5 text-center text-brand-600 border-b-2 border-brand-600">
+        <i class="fa-solid fa-list mr-1"></i> Vagas (<span id="count-results">0</span>)
+      </button>
+      <button id="tab-btn-saved" onclick="switchTab('saved')" class="flex-1 py-2.5 text-center text-slate-400 border-b-2 border-transparent">
+        <i class="fa-solid fa-bookmark mr-1"></i> Salvas (<span id="count-saved">0</span>)
+      </button>
+      <button id="tab-btn-direct" onclick="switchTab('direct')" class="flex-1 py-2.5 text-center text-slate-400 border-b-2 border-transparent">
+        <i class="fa-solid fa-arrow-up-right-from-square mr-1"></i> Busca Direta
+      </button>
+    </div>
+
+    <!-- TAB 1: LISTA DE VAGAS -->
+    <div id="tab-content-results" class="space-y-3">
+      <!-- Loader State -->
+      <div id="loading-state" class="hidden py-10 text-center space-y-3">
+        <div class="inline-block w-8 h-8 border-4 border-brand-600 border-t-transparent rounded-full animate-spin"></div>
+        <p class="text-xs font-semibold text-slate-500">Varrendo portais de vagas em São Paulo...</p>
+      </div>
+
+      <!-- Empty State -->
+      <div id="empty-state" class="bg-white rounded-2xl p-8 text-center border border-slate-200/80 space-y-2">
+        <div class="w-12 h-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto text-xl">
+          <i class="fa-solid fa-magnifying-glass"></i>
+        </div>
+        <h3 class="font-bold text-slate-700 text-sm">Nenhuma busca realizada ainda</h3>
+        <p class="text-xs text-slate-400">Digite um cargo ou clique em uma busca rápida acima para encontrar as vagas abertas.</p>
+      </div>
+
+      <!-- Jobs Render Container -->
+      <div id="jobs-container" class="space-y-3"></div>
+    </div>
+
+    <!-- TAB 2: VAGAS SALVAS -->
+    <div id="tab-content-saved" class="hidden space-y-3">
+      <div id="empty-saved" class="bg-white rounded-2xl p-8 text-center border border-slate-200/80 space-y-2">
+        <div class="w-12 h-12 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto text-xl">
+          <i class="fa-regular fa-bookmark"></i>
+        </div>
+        <h3 class="font-bold text-slate-700 text-sm">Nenhuma vaga salva</h3>
+        <p class="text-xs text-slate-400">Clique no ícone de marcador das vagas para acompanhar aqui depois.</p>
+      </div>
+      <div id="saved-container" class="space-y-3"></div>
+    </div>
+
+    <!-- TAB 3: GERADOR DE QUERIES DIRETAS (LINKEDIN / GOOGLE X-RAY) -->
+    <div id="tab-content-direct" class="hidden space-y-3">
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 space-y-3">
+        <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+          <i class="fa-brands fa-linkedin text-brand-600 text-lg"></i> Atalhos Diretos de Busca
+        </h3>
+        <p class="text-xs text-slate-500">
+          Esta opção abre os resultados filtrados diretamente no app do LinkedIn ou no Google X-Ray (para achar recrutadores em SP).
+        </p>
+
+        <div class="space-y-2 pt-2">
+          <button onclick="openExternalSearch('linkedin_jobs')" class="w-full p-3 bg-brand-50 hover:bg-brand-100 border border-brand-200 text-brand-800 rounded-xl font-semibold text-xs flex items-center justify-between text-left">
+            <span><i class="fa-solid fa-briefcase text-brand-600 mr-2"></i> Abrir LinkedIn Jobs (Filtrado em SP)</span>
+            <i class="fa-solid fa-chevron-right text-slate-400"></i>
+          </button>
+
+          <button onclick="openExternalSearch('google_xray_recruiter')" class="w-full p-3 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-800 rounded-xl font-semibold text-xs flex items-center justify-between text-left">
+            <span><i class="fa-solid fa-user-tie text-purple-600 mr-2"></i> Localizar Recrutadores no LinkedIn (Google X-Ray)</span>
+            <i class="fa-solid fa-chevron-right text-slate-400"></i>
+          </button>
+
+          <button onclick="openExternalSearch('gupy_search')" class="w-full p-3 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 rounded-xl font-semibold text-xs flex items-center justify-between text-left">
+            <span><i class="fa-solid fa-globe text-emerald-600 mr-2"></i> Buscar Vagas Diretas na Gupy</span>
+            <i class="fa-solid fa-chevron-right text-slate-400"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- BOTTOM NAVIGATION BAR FOR MOBILE -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-6 py-2 flex justify-around items-center z-40 max-w-md mx-auto">
+    <button onclick="switchTab('results')" class="flex flex-col items-center text-brand-600 gap-1">
+      <i class="fa-solid fa-magnifying-glass text-base"></i>
+      <span class="text-[10px] font-bold">Buscar</span>
+    </button>
+    <button onclick="switchTab('saved')" class="flex flex-col items-center text-slate-400 hover:text-brand-600 gap-1">
+      <i class="fa-solid fa-bookmark text-base"></i>
+      <span class="text-[10px] font-bold">Salvas</span>
+    </button>
+    <button onclick="switchTab('direct')" class="flex flex-col items-center text-slate-400 hover:text-brand-600 gap-1">
+      <i class="fa-solid fa-compass text-base"></i>
+      <span class="text-[10px] font-bold">Atalhos</span>
+    </button>
+  </nav>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    // BASE DE DADOS MOCK (SIMULANDO RETORNO DO SCRAPER INTEGRIDAS COM REQUISITOS E RECRUTADORES EM SP)
+    const mockJobsDatabase = [
+      {
+        id: 'job_sp_101',
+        title: 'Analista de Marketing Digital e Conteúdo',
+        company: 'Grupo Conecta SP',
+        location: 'São Paulo, SP (Híbrido - Av. Paulista)',
+        modality: 'sp',
+        source: 'LinkedIn Jobs',
+        posted: 'Há 2 horas',
+        description: 'Buscamos profissional para gestão de redes sociais, produção de conteúdo e acompanhamento de métricas de engajamento.',
+        responsibilities: [
+          'Planejar e executar calendário editorial de redes sociais',
+          'Acompanhar relatórios no Google Analytics e Meta Business',
+          'Interface com equipe de vendas para geração de leads'
+        ],
+        skills: ['Marketing Digital', 'Copywriting', 'Google Analytics', 'Canva/Figma'],
+        recruiter: {
+          name: 'Juliana Mendes',
+          role: 'Tech & Business Recruiter',
+          linkedin: 'https://www.linkedin.com',
+          email: 'juliana.recrutamento@grupoconecta.com.br'
+        },
+        apply_url: 'https://www.linkedin.com/jobs'
+      },
+      {
+        id: 'job_sp_102',
+        title: 'Analista de Recursos Humanos / R&S',
+        company: 'Inovação RH Talentos',
+        location: 'São Paulo, SP (Presencial - Zona Sul)',
+        modality: 'sp',
+        source: 'Gupy',
+        posted: 'Há 5 horas',
+        description: 'Responsável pelo alinhamento de perfis com gestores, triagem de currículos e condução de entrevistas de seleção.',
+        responsibilities: [
+          'Triagem de currículos e publicação de vagas em portais',
+          'Condução de entrevistas por competências',
+          'Onboarding de novos colaboradores'
+        ],
+        skills: ['Recrutamento e Seleção', 'Entrevista por Competência', 'Gupy', 'Excel'],
+        recruiter: {
+          name: 'Carlos Eduardo',
+          role: 'Coordenador de DHO',
+          linkedin: 'https://www.linkedin.com',
+          email: null
+        },
+        apply_url: 'https://gupy.io'
+      },
+      {
+        id: 'job_sp_103',
+        title: 'Assistente Comercial / Inside Sales',
+        company: 'Logix Soluções',
+        location: 'Remoto (Atuação em SP/Brasil)',
+        modality: 'remote',
+        source: 'LinkedIn Jobs',
+        posted: 'Hoje',
+        description: 'Atuação na prospecção ativa de clientes B2B, qualificação de leads e agendamento de reuniões para executivos de conta.',
+        responsibilities: [
+          'Qualificação de leads via telefone e WhatsApp',
+          'Registro de interações no sistema CRM',
+          'Acompanhamento do funil de vendas'
+        ],
+        skills: ['Vendas B2B', 'Inside Sales', 'CRM Salesforce / Hubspot', 'Comunicação'],
+        recruiter: {
+          name: 'Renata Lima',
+          role: 'Talent Acquisition',
+          linkedin: 'https://www.linkedin.com',
+          email: 'renata.lima@logix.com.br'
+        },
+        apply_url: 'https://www.linkedin.com/jobs'
+      },
+      {
+        id: 'job_sp_104',
+        title: 'Analista de Atendimento ao Cliente / CS',
+        company: 'Fintech Varejo SP',
+        location: 'São Paulo, SP (Híbrido - Faria Lima)',
+        modality: 'sp',
+        source: 'Catho / LinkedIn',
+        posted: 'Há 1 dia',
+        description: 'Garantir a melhor experiência aos usuários da plataforma, solucionando dúvidas e acompanhando métricas de retenção (NPS).',
+        responsibilities: [
+          'Atendimento receptivo via chat e e-mail',
+          'Resolução de chamados de suporte nível 1',
+          'Análise de feedback e sugestões de melhorias de produto'
+        ],
+        skills: ['Customer Success', 'Zendesk', 'NPS', 'Boa Escrita'],
+        recruiter: null,
+        apply_url: 'https://www.linkedin.com/jobs'
+      }
+    ];
+
+    // ESTADO DA APLICAÇÃO
+    let currentJobs = [];
+    let savedJobIds = JSON.parse(localStorage.getItem('vagas_salvas_ids') || '[]');
+
+    // INICIALIZAÇÃO
+    document.addEventListener('DOMContentLoaded', () => {
+      updateSavedCount();
+      renderSavedJobs();
+    });
+
+    // EXECUTAR BUSCA DE VAGAS
+    function executeSearch() {
+      const rawKeywords = document.getElementById('input-keywords').value.trim();
+      const modality = document.getElementById('select-modality').value;
+
+      document.getElementById('empty-state').classList.add('hidden');
+      document.getElementById('loading-state').classList.remove('hidden');
+      document.getElementById('jobs-container').innerHTML = '';
+
+      setTimeout(() => {
+        document.getElementById('loading-state').classList.add('hidden');
+
+        // Filtro de vagas no banco simulado
+        currentJobs = mockJobsDatabase.filter(job => {
+          const matchesKeyword = rawKeywords === '' || 
+            rawKeywords.toLowerCase().split(',').some(kw => 
+              job.title.toLowerCase().includes(kw.trim().toLowerCase()) ||
+              job.description.toLowerCase().includes(kw.trim().toLowerCase()) ||
+              job.skills.some(s => s.toLowerCase().includes(kw.trim().toLowerCase()))
+            );
+
+          const matchesModality = modality === 'all' || job.modality === modality || (modality === 'sp' && job.location.includes('SP'));
+
+          return matchesKeyword && matchesModality;
+        });
+
+        document.getElementById('count-results').innerText = currentJobs.length;
+
+        if (currentJobs.length === 0) {
+          document.getElementById('jobs-container').innerHTML = `
+            <div class="bg-white p-6 rounded-2xl text-center border border-slate-200">
+              <p class="font-bold text-slate-700 text-sm">Nenhuma vaga encontrada para esses termos.</p>
+              <p class="text-xs text-slate-400 mt-1">Tente termos mais amplos ou altere a modalidade.</p>
+            </div>
+          `;
+        } else {
+          renderJobsList(currentJobs, 'jobs-container');
+        }
+      }, 600);
+    }
+
+    // PRESET RÁPIDO DE CARGO
+    function setQuickSearch(keywords) {
+      document.getElementById('input-keywords').value = keywords;
+      executeSearch();
+    }
+
+    // RENDERIZAR LISTA DE VAGAS EM CARD MOBILE
+    function renderJobsList(jobs, containerId) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = '';
+
+      jobs.forEach(job => {
+        const isSaved = savedJobIds.includes(job.id);
+
+        const cardHTML = `
+          <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/90 space-y-3 transition hover:shadow-md">
+            
+            <!-- Card Header -->
+            <div class="flex justify-between items-start gap-2">
+              <div>
+                <span class="inline-block bg-brand-50 text-brand-700 text-[10px] font-bold px-2 py-0.5 rounded-md mb-1 border border-brand-100">
+                  ${job.source}
+                </span>
+                <h3 class="font-bold text-slate-900 text-sm leading-snug">${job.title}</h3>
+                <p class="text-xs font-semibold text-slate-600">${job.company}</p>
+              </div>
+              <button onclick="toggleSaveJob('${job.id}')" class="text-slate-300 hover:text-amber-500 text-lg p-1 transition ${isSaved ? 'text-amber-500' : ''}">
+                <i class="${isSaved ? 'fa-solid' : 'fa-regular'} fa-bookmark"></i>
+              </button>
+            </div>
+
+            <!-- Tags Info -->
+            <div class="flex flex-wrap gap-1.5 text-[11px] text-slate-500">
+              <span class="bg-slate-100 px-2 py-1 rounded-lg flex items-center gap-1">
+                <i class="fa-solid fa-location-dot text-slate-400"></i> ${job.location}
+              </span>
+              <span class="bg-slate-100 px-2 py-1 rounded-lg flex items-center gap-1">
+                <i class="fa-regular fa-clock text-slate-400"></i> ${job.posted}
+              </span>
+            </div>
+
+            <!-- Descrição Curta -->
+            <p class="text-xs text-slate-600 leading-relaxed">
+              ${job.description}
+            </p>
+
+            <!-- Expansível: Responsabilidades e Skills -->
+            <details class="text-xs text-slate-600 group">
+              <summary class="font-semibold text-brand-600 cursor-pointer list-none flex items-center justify-between py-1 border-t border-slate-100 mt-2">
+                <span>Ver requisitos e atribuições</span>
+                <i class="fa-solid fa-chevron-down group-open:rotate-180 transition-transform"></i>
+              </summary>
+              <div class="pt-2 space-y-2">
+                <div>
+                  <strong class="text-slate-800 text-[11px] block mb-1 uppercase tracking-wider">Principais Atribuições:</strong>
+                  <ul class="list-disc list-inside space-y-0.5 text-slate-600 pl-1">
+                    ${job.responsibilities.map(r => `<li>${r}</li>`).join('')}
+                  </ul>
+                </div>
+                <div>
+                  <strong class="text-slate-800 text-[11px] block mb-1 uppercase tracking-wider">Habilidades Exigidas:</strong>
+                  <div class="flex flex-wrap gap-1">
+                    ${job.skills.map(s => `<span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[10px] font-semibold">${s}</span>`).join('')}
+                  </div>
+                </div>
+              </div>
+            </details>
+
+            <!-- Contato Recrutador / Ações -->
+            <div class="pt-2 border-t border-slate-100 space-y-2">
+              ${job.recruiter ? `
+                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 text-xs flex items-center justify-between">
+                  <div>
+                    <p class="font-bold text-slate-800 text-[11px]"><i class="fa-solid fa-user-tie text-brand-600 mr-1"></i> ${job.recruiter.name}</p>
+                    <p class="text-[10px] text-slate-500">${job.recruiter.role}</p>
+                  </div>
+                  ${job.recruiter.email ? `
+                    <a href="mailto:${job.recruiter.email}?subject=Candidatura - ${encodeURIComponent(job.title)}" class="bg-emerald-600 text-white font-bold text-[10px] px-2.5 py-1.5 rounded-lg flex items-center gap-1 hover:bg-emerald-700 transition">
+                      <i class="fa-regular fa-envelope"></i> E-mail
+                    </a>
+                  ` : ''}
+                </div>
+              ` : ''}
+
+              <a href="${job.apply_url}" target="_blank" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
+                Candidatar-se / Ver no Portal <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+              </a>
+            </div>
+
+          </div>
+        `;
+        container.innerHTML += cardHTML;
+      });
+    }
+
+    // SALVAR / REMOVER VAGA DOS FAVORITOS
+    function toggleSaveJob(id) {
+      if (savedJobIds.includes(id)) {
+        savedJobIds = savedJobIds.filter(item => item !== id);
+      } else {
+        savedJobIds.push(id);
+      }
+      localStorage.setItem('vagas_salvas_ids', JSON.stringify(savedJobIds));
+      updateSavedCount();
+      renderSavedJobs();
+
+      if (currentJobs.length > 0) {
+        renderJobsList(currentJobs, 'jobs-container');
+      }
+    }
+
+    function updateSavedCount() {
+      document.getElementById('count-saved').innerText = savedJobIds.length;
+    }
+
+    function renderSavedJobs() {
+      const container = document.getElementById('saved-container');
+      const emptyState = document.getElementById('empty-saved');
+
+      const savedJobsList = mockJobsDatabase.filter(j => savedJobIds.includes(j.id));
+
+      if (savedJobsList.length === 0) {
+        emptyState.classList.remove('hidden');
+        container.innerHTML = '';
+      } else {
+        emptyState.classList.add('hidden');
+        renderJobsList(savedJobsList, 'saved-container');
+      }
+    }
+
+    // TROCA DE ABAS
+    function switchTab(tab) {
+      const resultsBtn = document.getElementById('tab-btn-results');
+      const savedBtn = document.getElementById('tab-btn-saved');
+      const directBtn = document.getElementById('tab-btn-direct');
+
+      const resultsContent = document.getElementById('tab-content-results');
+      const savedContent = document.getElementById('tab-content-saved');
+      const directContent = document.getElementById('tab-content-direct');
+
+      // Reset styles
+      [resultsBtn, savedBtn, directBtn].forEach(b => {
+        b.className = 'flex-1 py-2.5 text-center text-slate-400 border-b-2 border-transparent';
+      });
+      [resultsContent, savedContent, directContent].forEach(c => c.classList.add('hidden'));
+
+      if (tab === 'results') {
+        resultsBtn.className = 'flex-1 py-2.5 text-center text-brand-600 border-b-2 border-brand-600 font-bold';
+        resultsContent.classList.remove('hidden');
+      } else if (tab === 'saved') {
+        savedBtn.className = 'flex-1 py-2.5 text-center text-brand-600 border-b-2 border-brand-600 font-bold';
+        savedContent.classList.remove('hidden');
+      } else if (tab === 'direct') {
+        directBtn.className = 'flex-1 py-2.5 text-center text-brand-600 border-b-2 border-brand-600 font-bold';
+        directContent.classList.remove('hidden');
+      }
+    }
+
+    // BUSCA EXTERNA COM QUERIES OTIMIZADAS
+    function openExternalSearch(type) {
+      const rawKeywords = document.getElementById('input-keywords').value.trim() || 'Marketing, Suporte, RH, Vendas';
+      const termsArray = rawKeywords.split(',').map(t => `"${t.trim()}"`).join(' OR ');
+
+      let targetUrl = '';
+
+      if (type === 'linkedin_jobs') {
+        const query = `(${termsArray}) AND ("São Paulo" OR "SP" OR "Remoto") AND "Brasil"`;
+        targetUrl = `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(query)}&location=Brasil`;
+      } else if (type === 'google_xray_recruiter') {
+        const query = `site:linkedin.com/in/ ("recrutador" OR "talent acquisition" OR "RH") AND (${termsArray}) AND ("São Paulo" OR "SP")`;
+        targetUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+      } else if (type === 'gupy_search') {
+        const query = `site:gupy.io/job (${termsArray}) "São Paulo"`;
+        targetUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+      }
+
+      window.open(targetUrl, '_blank');
+    }
+  </script>
+</body>
+</html>
