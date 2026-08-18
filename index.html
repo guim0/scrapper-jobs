@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Otimizador de CV & ATS v2.0.0</title>
+    <title>Otimizador de CV & ATS v2.1.0</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- pdf.js da Mozilla -->
@@ -21,55 +21,62 @@
         <div class="max-w-md mx-auto flex justify-between items-center">
             <div>
                 <h1 class="font-bold text-lg leading-tight">Otimizador ATS & LinkedIn</h1>
-                <p class="text-xs text-slate-400">Análise de CV + Perfil Profissional</p>
+                <p class="text-xs text-slate-400">Análise Flexível: PDF, LinkedIn ou Cargo</p>
             </div>
-            <span class="text-xs bg-blue-600 px-2.5 py-1 rounded-full font-mono font-semibold">v2.0.0</span>
+            <span class="text-xs bg-blue-600 px-2.5 py-1 rounded-full font-mono font-semibold">v2.1.0</span>
         </div>
     </header>
 
     <main class="max-w-md mx-auto w-full p-4 space-y-5 flex-1">
 
-        <!-- Card: Upload de PDF + LinkedIn Link -->
+        <!-- Card: Upload / LinkedIn / Termos -->
         <section class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+            
+            <!-- Entrada 1: PDF -->
             <div>
-                <h2 class="font-bold text-base text-slate-900 mb-1 flex items-center gap-2">
-                    📄 1. Análise de Currículo (PDF)
+                <h2 class="font-bold text-xs text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1">
+                    📄 1. Currículo em PDF (Opcional)
                 </h2>
-                <p class="text-xs text-slate-500 mb-3">
-                    Selecione seu CV em PDF para extrair palavras-chave técnicas e verificar compatibilidade com robôs de RH.
-                </p>
-
                 <input type="file" id="cvInput" accept="application/pdf" class="hidden" onchange="processarPDF(event)">
-
                 <label for="cvInput"
-                    class="w-full bg-slate-50 hover:bg-slate-100 border-2 border-dashed border-slate-300 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer transition-all">
-                    <span id="cvFileName" class="text-xs font-semibold text-slate-600">Clique para selecionar o PDF do Currículo</span>
+                    class="w-full bg-slate-50 hover:bg-slate-100 border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center justify-center cursor-pointer transition-all">
+                    <span id="cvFileName" class="text-xs font-semibold text-slate-600">Selecionar PDF do Currículo</span>
                     <span class="text-[10px] text-slate-400 mt-0.5">Processamento 100% local e privado</span>
                 </label>
             </div>
 
+            <!-- Entrada 2: LinkedIn -->
             <div class="pt-2 border-t border-slate-100">
                 <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    🔗 2. Link do Seu Perfil do LinkedIn
+                    🔗 2. Link do Perfil LinkedIn (Opcional)
                 </label>
                 <input type="url" id="linkedinUrl" placeholder="https://www.linkedin.com/in/seu-perfil"
                     class="w-full p-3 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none">
-                <p class="text-[10px] text-slate-400 mt-1">Usado para validação de coerência e atalhos de busca rápida.</p>
+            </div>
+
+            <!-- Entrada 3: Palavras-chave manuais -->
+            <div class="pt-2 border-t border-slate-100">
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    🏷️ 3. Cargo ou Tecnologias (Opcional)
+                </label>
+                <input type="text" id="manualKeywords" placeholder="Ex: Frontend, React, Node.js"
+                    class="w-full p-3 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none">
+                <p class="text-[10px] text-slate-400 mt-1">Preencha ao menos uma das três opções acima para analisar.</p>
             </div>
 
             <button onclick="executarAnaliseCompleta()"
                 class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-sm text-xs transition-all active:scale-95 flex items-center justify-center gap-1">
-                🚀 Gerar Diagnóstico ATS
+                🚀 Gerar Diagnóstico & Vagas
             </button>
         </section>
 
         <!-- Painel de Resultados / Diagnóstico -->
         <section id="resultadoContainer" class="hidden space-y-4">
             
-            <!-- Card de Hard & Soft Skills Extradas -->
+            <!-- Card de Hard & Soft Skills Extraídas -->
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
                 <h3 class="font-bold text-sm text-slate-900 border-b border-slate-100 pb-2">
-                    🎯 Termos Identificados no CV
+                    🎯 Termos Identificados
                 </h3>
                 
                 <div>
@@ -89,8 +96,8 @@
                 </div>
             </div>
 
-            <!-- Card Dicas ATS (Passa pelos robôs de RH?) -->
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+            <!-- Card Dicas ATS -->
+            <div id="atsCard" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
                 <h3 class="font-bold text-sm text-slate-900 border-b border-slate-100 pb-2">
                     🤖 Checklist de Legibilidade ATS
                 </h3>
@@ -100,16 +107,16 @@
             <!-- Card Ações & Buscas Inteligentes -->
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
                 <h3 class="font-bold text-sm text-slate-900 border-b border-slate-100 pb-2">
-                    🔍 Vagas Inteligentes (Queries ATS-Friendly)
+                    🔍 Vagas Otimizadas
                 </h3>
                 <p class="text-xs text-slate-500">
-                    Acesse vagas direto nas plataformas usando as palavras-chave extraídas do seu currículo.
+                    Acesse vagas direto nas plataformas usando os termos consolidados do seu perfil.
                 </p>
 
                 <div class="space-y-2 pt-1">
                     <button onclick="buscarVagasLinkedIn()"
                         class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-2.5 rounded-xl shadow-sm text-xs transition-all flex items-center justify-center gap-1">
-                        💼 Vagas Otimizadas no LinkedIn
+                        💼 Vagas no LinkedIn
                     </button>
                     <button onclick="buscarFeedLinkedIn()"
                         class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl shadow-sm text-xs transition-all flex items-center justify-center gap-1">
@@ -117,7 +124,7 @@
                     </button>
                     <button onclick="buscarGupyGoogle()"
                         class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl shadow-sm text-xs transition-all flex items-center justify-center gap-1">
-                        🟢 Buscar Vagas Direto no Google (Gupy/Lever)
+                        🟢 Buscar Vagas no Google (Gupy / Lever / Greenhouse)
                     </button>
                 </div>
             </div>
@@ -128,7 +135,7 @@
 
     <!-- Footer -->
     <footer class="bg-slate-900 text-slate-400 text-[11px] p-4 text-center border-t border-slate-800 space-y-1">
-        <p><strong>Otimizador ATS & CV</strong> &bull; Versão <span class="text-blue-400">v2.0.0</span></p>
+        <p><strong>Otimizador ATS & CV</strong> &bull; Versão <span class="text-blue-400">v2.1.0</span></p>
         <p class="text-[10px] text-slate-500">100% Client-Side &bull; Hospedado no GitHub Pages</p>
     </footer>
 
@@ -141,7 +148,7 @@
             'javascript', 'typescript', 'react', 'next.js', 'vue', 'angular', 'node.js', 'html', 'css', 
             'tailwind', 'sass', 'graphql', 'rest api', 'docker', 'kubernetes', 'aws', 'gcp', 'sql', 
             'postgres', 'mongodb', 'git', 'ci/cd', 'jest', 'cypress', 'playwright', 'scrum', 'kanban', 
-            'figma', 'python', 'java', 'c#', 'dotnet', 'microservices', 'clean architecture'
+            'figma', 'python', 'java', 'c#', 'dotnet', 'microservices', 'clean architecture', 'frontend', 'backend', 'fullstack'
         ];
 
         const SOFT_SKILLS_PATTERNS = [
@@ -176,20 +183,46 @@
         }
 
         function executarAnaliseCompleta() {
-            if (!cvTextParsed) {
-                alert('Por favor, faça upload de um arquivo PDF do seu currículo primeiro.');
+            const linkedinUrl = document.getElementById('linkedinUrl').value.trim();
+            const manualKeywords = document.getElementById('manualKeywords').value.trim();
+
+            if (!cvTextParsed && !linkedinUrl && !manualKeywords) {
+                alert('Preencha ao menos uma das opções: envie o PDF, cole a URL do LinkedIn ou digite cargos/tecnologias.');
                 return;
             }
 
-            const lowerText = cvTextParsed.toLowerCase();
+            let sourceText = cvTextParsed;
+
+            // Extrai termos do slug do LinkedIn se preenchido
+            if (linkedinUrl) {
+                const linkedinSlug = linkedinUrl.split('/in/')[1] || linkedinUrl;
+                sourceText += ' ' + linkedinSlug.replace(/[-_]/g, ' ');
+            }
+
+            // Adiciona palavras-chave manuais
+            if (manualKeywords) {
+                sourceText += ' ' + manualKeywords;
+            }
+
+            const lowerText = sourceText.toLowerCase();
 
             // Extração de Hard Skills
             extractedHardSkills = HARD_SKILLS_DICT.filter(skill => lowerText.includes(skill));
 
+            // Se digitou termos manuais que não estavam no dicionário, adiciona também
+            if (manualKeywords) {
+                manualKeywords.split(',').forEach(k => {
+                    const clean = k.trim().toLowerCase();
+                    if (clean && !extractedHardSkills.includes(clean)) {
+                        extractedHardSkills.push(clean);
+                    }
+                });
+            }
+
             // Extração de Soft Skills
             extractedSoftSkills = [];
             SOFT_SKILLS_PATTERNS.forEach(pattern => {
-                if (pattern.regex.test(cvTextParsed)) {
+                if (pattern.regex.test(sourceText)) {
                     extractedSoftSkills.push(pattern.name);
                 }
             });
@@ -201,8 +234,14 @@
             document.getElementById('hardCount').innerText = extractedHardSkills.length;
             document.getElementById('softCount').innerText = extractedSoftSkills.length;
 
-            // Análise Checklist ATS
-            gerarChecklistATS(lowerText);
+            // Exibe checklist ATS apenas se um PDF foi enviado
+            const atsCard = document.getElementById('atsCard');
+            if (cvTextParsed) {
+                atsCard.classList.remove('hidden');
+                gerarChecklistATS(cvTextParsed.toLowerCase());
+            } else {
+                atsCard.classList.add('hidden');
+            }
 
             document.getElementById('resultadoContainer').classList.remove('hidden');
         }
@@ -211,7 +250,7 @@
             const container = document.getElementById(containerId);
             container.innerHTML = '';
             if (list.length === 0) {
-                container.innerHTML = '<span class="text-[10px] text-slate-400 italic">Nenhum termo pré-definido identificado</span>';
+                container.innerHTML = '<span class="text-[10px] text-slate-400 italic">Nenhum termo identificado</span>';
                 return;
             }
             list.forEach(item => {
