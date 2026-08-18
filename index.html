@@ -4,8 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Otimizador de Vagas & ATS v2.2.0</title>
+    <title>Otimizador ATS & Buscador de Vagas</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- pdf.js da Mozilla -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -14,101 +16,84 @@
 
 <body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col font-sans pb-16">
 
+    <!-- Header Fixo -->
     <header class="bg-slate-900 text-white p-4 sticky top-0 z-50 shadow-md">
         <div class="max-w-md mx-auto flex justify-between items-center">
             <div>
-                <h1 class="font-bold text-lg leading-tight">Otimizador ATS & LinkedIn</h1>
-                <p class="text-xs text-slate-400">Processamento Direto & Sem Mocks</p>
+                <h1 class="font-bold text-lg leading-tight">Otimizador ATS</h1>
+                <p class="text-xs text-slate-400">Extração Local de PDF & Buscas Diretas</p>
             </div>
-            <span class="text-xs bg-blue-600 px-2.5 py-1 rounded-full font-mono font-semibold">v2.2.0</span>
+            <span class="text-xs bg-blue-600 px-2.5 py-1 rounded-full font-mono font-semibold">v3.0.0</span>
         </div>
     </header>
 
     <main class="max-w-md mx-auto w-full p-4 space-y-5 flex-1">
 
+        <!-- Card: Upload do PDF -->
         <section class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-            
-            <!-- Entrada 1: PDF -->
             <div>
-                <h2 class="font-bold text-xs text-slate-700 uppercase tracking-wider mb-1">
-                    📄 1. Currículo (PDF)
+                <h2 class="font-bold text-xs text-slate-700 uppercase tracking-wider mb-2">
+                    📄 Selecione o Currículo (PDF)
                 </h2>
-                <input type="file" id="cvInput" accept="application/pdf" class="hidden" onchange="processarPDF(event)">
-                <label for="cvInput" id="cvLabel"
-                    class="w-full bg-slate-50 hover:bg-slate-100 border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center justify-center cursor-pointer transition-all">
-                    <span id="cvFileName" class="text-xs font-semibold text-slate-600">Selecionar PDF do Currículo</span>
-                    <span class="text-[10px] text-slate-400 mt-0.5">Processamento 100% local</span>
+                
+                <input type="file" id="cvInput" accept="application/pdf" class="hidden" onchange="manipularArquivoPDF(event)">
+                
+                <label for="cvInput" id="uploadLabel"
+                    class="w-full bg-slate-50 hover:bg-slate-100 border-2 border-dashed border-slate-300 rounded-xl p-5 flex flex-col items-center justify-center cursor-pointer transition-all">
+                    <span id="fileNameDisplay" class="text-xs font-semibold text-slate-600">Clique para selecionar o arquivo PDF</span>
+                    <span class="text-[10px] text-slate-400 mt-1">Processamento seguro e privado no próprio navegador</span>
                 </label>
             </div>
 
-            <!-- Entrada 2: LinkedIn -->
-            <div class="pt-2 border-t border-slate-100">
-                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    🔗 2. Link do Perfil LinkedIn
-                </label>
-                <input type="url" id="linkedinUrl" placeholder="https://www.linkedin.com/in/seu-perfil"
-                    class="w-full p-3 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none disabled:bg-slate-100 disabled:text-slate-400">
-            </div>
-
-            <!-- Entrada 3: Palavras-chave manuais -->
-            <div class="pt-2 border-t border-slate-100">
-                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    🏷️ 3. Palavras-chave / Tecnologias Diretas
-                </label>
-                <input type="text" id="manualKeywords" placeholder="Ex: React, Node.js, TypeScript"
-                    class="w-full p-3 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none disabled:bg-slate-100 disabled:text-slate-400">
-            </div>
-
-            <button id="btnProcessar" onclick="executarAnaliseCompleta()"
-                class="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white font-bold py-3 rounded-xl shadow-sm text-xs transition-all active:scale-95 flex items-center justify-center gap-2">
-                <span id="btnText">🚀 Processar & Engatilhar Buscas</span>
+            <button id="btnAnalisar" onclick="analisarPDF()" disabled
+                class="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl shadow-sm text-xs transition-all flex items-center justify-center gap-2">
+                <span id="btnText">🚀 Analisar e Engatilhar Queries</span>
                 <span id="btnSpinner" class="hidden animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
             </button>
         </section>
 
-        <!-- Mensagens de Erro / Alerta Real -->
-        <div id="errorAlert" class="hidden bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl text-xs font-medium"></div>
+        <!-- Container de Alerta -->
+        <div id="alertBox" class="hidden bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl text-xs font-medium"></div>
 
         <!-- Painel de Resultados -->
-        <section id="resultadoContainer" class="hidden space-y-4">
+        <section id="resultsSection" class="hidden space-y-4">
             
+            <!-- Card Skills Extraídas -->
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
                 <h3 class="font-bold text-sm text-slate-900 border-b border-slate-100 pb-2">
-                    🎯 Termos Identificados
+                    🎯 Hard Skills Identificadas no PDF
                 </h3>
                 <div>
-                    <div class="flex justify-between items-center mb-1">
-                        <span class="text-xs font-bold text-slate-700">Hard Skills Reais:</span>
-                        <span id="hardCount" class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold">0</span>
+                    <div class="flex justify-between items-center mb-1.5">
+                        <span class="text-xs font-bold text-slate-700">Tecnologias encontradas:</span>
+                        <span id="skillCount" class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold">0</span>
                     </div>
-                    <div id="hardSkillsList" class="flex flex-wrap gap-1"></div>
+                    <div id="skillsBadges" class="flex flex-wrap gap-1"></div>
                 </div>
             </div>
 
             <!-- Card Queries Engatilhadas -->
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
                 <h3 class="font-bold text-sm text-slate-900 border-b border-slate-100 pb-2">
-                    ⚙️ Queries Pré-Engatilhadas
+                    ⚙️ String de Busca Booleana
                 </h3>
-                <div class="space-y-2">
-                    <div>
-                        <span class="text-[10px] font-bold text-slate-500 uppercase">String Booleana Gerada:</span>
-                        <code id="computedQueryDisplay" class="block p-2 bg-slate-900 text-emerald-400 rounded-lg text-[11px] font-mono break-all mt-1"></code>
-                    </div>
+                <div>
+                    <span class="text-[10px] font-bold text-slate-500 uppercase">Termos da Consulta:</span>
+                    <code id="booleanQueryDisplay" class="block p-2.5 bg-slate-900 text-emerald-400 rounded-lg text-[11px] font-mono break-all mt-1"></code>
                 </div>
 
                 <div class="space-y-2 pt-2">
                     <button onclick="executarBusca('linkedin_jobs')"
                         class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-2.5 rounded-xl shadow-sm text-xs transition-all">
-                        💼 Abrir Vagas no LinkedIn
+                        💼 Vagas no LinkedIn
                     </button>
                     <button onclick="executarBusca('linkedin_feed')"
                         class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl shadow-sm text-xs transition-all">
-                        💬 Abrir Feed de Recrutadores
+                        💬 Posts de Recrutadores (Feed)
                     </button>
                     <button onclick="executarBusca('google_ats')"
                         class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl shadow-sm text-xs transition-all">
-                        🟢 Abrir Google Dorking (Gupy / Lever / Greenhouse)
+                        🟢 Google Search (Gupy / Lever / Greenhouse)
                     </button>
                 </div>
             </div>
@@ -118,171 +103,141 @@
     </main>
 
     <script>
-        let cvTextParsed = '';
-        let extractedHardSkills = [];
+        let extractedPdfText = '';
+        let detectedSkills = [];
 
-        const HARD_SKILLS_DICT = [
+        // Dicionário de tecnologias para rastreio no texto do PDF
+        const TECH_DICTIONARY = [
             'javascript', 'typescript', 'react', 'next.js', 'vue', 'angular', 'node.js', 'html', 'css', 
             'tailwind', 'sass', 'graphql', 'rest api', 'docker', 'kubernetes', 'aws', 'gcp', 'sql', 
             'postgres', 'mongodb', 'git', 'ci/cd', 'jest', 'cypress', 'playwright', 'scrum', 'kanban', 
             'figma', 'python', 'java', 'c#', 'dotnet', 'microservices', 'clean architecture', 'frontend', 'backend', 'fullstack'
         ];
 
-        async function processarPDF(event) {
+        function manipularArquivoPDF(event) {
             const file = event.target.files[0];
             if (!file) return;
 
-            document.getElementById('cvFileName').innerText = file.name;
+            document.getElementById('fileNameDisplay').innerText = `📄 ${file.name}`;
+            document.getElementById('btnAnalisar').disabled = false;
+            
+            // Oculta resultados anteriores caso troque o arquivo
+            document.getElementById('resultsSection').classList.add('hidden');
+            esconderAlerta();
+
             const reader = new FileReader();
             reader.onload = async function () {
-                const typedarray = new Uint8Array(this.result);
-                const pdf = await pdfjsLib.getDocument(typedarray).promise;
-                let fullText = '';
-                for (let i = 1; i <= pdf.numPages; i++) {
-                    const page = await pdf.getPage(i);
-                    const textContent = await page.getTextContent();
-                    fullText += textContent.items.map(item => item.str).join(' ') + ' ';
+                try {
+                    const typedarray = new Uint8Array(this.result);
+                    const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                    let textAccumulator = '';
+
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const textContent = await page.getTextContent();
+                        textAccumulator += textContent.items.map(item => item.str).join(' ') + ' ';
+                    }
+
+                    extractedPdfText = textAccumulator;
+                } catch (err) {
+                    mostrarAlerta('Erro ao ler o arquivo PDF. Certifique-se de que é um documento válido.');
+                    document.getElementById('btnAnalisar').disabled = true;
                 }
-                cvTextParsed = fullText;
             };
             reader.readAsArrayBuffer(file);
         }
 
-        async function fetchLinkedInHTML(url) {
-            try {
-                const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
-                const res = await fetch(proxyUrl);
-                if (!res.ok) return null;
-                const html = await res.text();
-                // Remove tags HTML básicas para ler o corpo textual público
-                const doc = new DOMParser().parseFromString(html, 'text/html');
-                return doc.body ? doc.body.innerText : null;
-            } catch (err) {
-                console.warn('Não foi possível extrair dados públicos diretamente do LinkedIn URL via proxy:', err);
-                return null;
-            }
-        }
-
-        function setFormDisabled(disabled) {
-            document.getElementById('cvInput').disabled = disabled;
-            document.getElementById('linkedinUrl').disabled = disabled;
-            document.getElementById('manualKeywords').disabled = disabled;
-            document.getElementById('btnProcessar').disabled = disabled;
-            
+        function alternarEstadoCarregamento(carregando) {
+            const btn = document.getElementById('btnAnalisar');
+            const input = document.getElementById('cvInput');
             const btnText = document.getElementById('btnText');
-            const btnSpinner = document.getElementById('btnSpinner');
+            const spinner = document.getElementById('btnSpinner');
 
-            if (disabled) {
-                btnText.innerText = 'Processando e Rastreando...';
-                btnSpinner.classList.remove('hidden');
+            btn.disabled = carregando;
+            input.disabled = carregando;
+
+            if (carregando) {
+                btnText.innerText = 'Extraindo texto do PDF...';
+                spinner.classList.remove('hidden');
             } else {
-                btnText.innerText = '🚀 Processar & Engatilhar Buscas';
-                btnSpinner.classList.add('hidden');
+                btnText.innerText = '🚀 Analisar e Engatilhar Queries';
+                spinner.classList.add('hidden');
             }
         }
 
-        function showError(msg) {
-            const alertBox = document.getElementById('errorAlert');
-            alertBox.innerText = msg;
-            alertBox.classList.remove('hidden');
+        function mostrarAlerta(mensagem) {
+            const box = document.getElementById('alertBox');
+            box.innerText = mensagem;
+            box.classList.remove('hidden');
         }
 
-        function clearError() {
-            const alertBox = document.getElementById('errorAlert');
-            alertBox.classList.add('hidden');
-            alertBox.innerText = '';
+        function esconderAlerta() {
+            const box = document.getElementById('alertBox');
+            box.classList.add('hidden');
+            box.innerText = '';
         }
 
-        async function executarAnaliseCompleta() {
-            clearError();
-            setFormDisabled(true);
-
-            const linkedinUrl = document.getElementById('linkedinUrl').value.trim();
-            const manualKeywords = document.getElementById('manualKeywords').value.trim();
-
-            let aggregateText = cvTextParsed;
-
-            // Tentativa de busca ativa no LinkedIn se preenchido
-            if (linkedinUrl) {
-                const linkedinHTML = await fetchLinkedInHTML(linkedinUrl);
-                if (linkedinHTML) {
-                    aggregateText += ' ' + linkedinHTML;
-                } else {
-                    // Tenta ao menos extrair termos explícitos presentes na URL slug
-                    const slug = linkedinUrl.split('/in/')[1] || '';
-                    aggregateText += ' ' + slug.replace(/[-_]/g, ' ');
-                }
-            }
-
-            if (manualKeywords) {
-                aggregateText += ' ' + manualKeywords;
-            }
-
-            const lowerText = aggregateText.toLowerCase();
-
-            // Extração estrita sem fallbacks inventados
-            extractedHardSkills = HARD_SKILLS_DICT.filter(skill => lowerText.includes(skill));
-
-            if (manualKeywords) {
-                manualKeywords.split(',').forEach(k => {
-                    const clean = k.trim().toLowerCase();
-                    if (clean && !extractedHardSkills.includes(clean)) {
-                        extractedHardSkills.push(clean);
-                    }
-                });
-            }
-
-            setFormDisabled(false);
-
-            // Validação estrita: Se não achou NADA, falha explicitamente
-            if (extractedHardSkills.length === 0) {
-                document.getElementById('resultadoContainer').classList.add('hidden');
-                showError('⚠️ Nenhuma skill técnica foi identificada nas fontes fornecidas. Por favor, suba um PDF válido ou digite as tecnologias manualmente.');
+        function analisarPDF() {
+            if (!extractedPdfText || extractedPdfText.trim().length === 0) {
+                mostrarAlerta('O PDF selecionado parece estar vazio ou é uma imagem digitalizada sem camada de texto.');
                 return;
             }
 
-            // Renderiza resultados reais
-            renderBadges('hardSkillsList', extractedHardSkills);
-            document.getElementById('hardCount').innerText = extractedHardSkills.length;
+            esconderAlerta();
+            alternarEstadoCarregamento(true);
 
-            // Prepara e exibe a query engatilhada
-            const queryTerms = extractedHardSkills.slice(0, 4).map(s => `"${s}"`).join(' OR ');
-            document.getElementById('computedQueryDisplay').innerText = queryTerms;
+            setTimeout(() => {
+                const lowerContent = extractedPdfText.toLowerCase();
 
-            document.getElementById('resultadoContainer').classList.remove('hidden');
-        }
+                // Busca exata com base no dicionário técnico
+                detectedSkills = TECH_DICTIONARY.filter(tech => lowerContent.includes(tech));
 
-        function renderBadges(containerId, list) {
-            const container = document.getElementById(containerId);
-            container.innerHTML = '';
-            list.forEach(item => {
-                const span = document.createElement('span');
-                span.className = 'text-[10px] px-2 py-0.5 rounded-md font-medium border uppercase bg-blue-50 text-blue-700 border-blue-200';
-                span.innerText = item;
-                container.appendChild(span);
-            });
+                alternarEstadoCarregamento(false);
+
+                // Validação estrita
+                if (detectedSkills.length === 0) {
+                    document.getElementById('resultsSection').classList.add('hidden');
+                    mostrarAlerta('⚠️ Nenhuma palavra-chave técnica conhecida foi identificada no texto do PDF.');
+                    return;
+                }
+
+                // Renderização de Skills
+                const container = document.getElementById('skillsBadges');
+                container.innerHTML = '';
+                detectedSkills.forEach(skill => {
+                    const badge = document.createElement('span');
+                    badge.className = 'text-[10px] px-2 py-0.5 rounded-md font-bold uppercase bg-blue-50 text-blue-700 border border-blue-200';
+                    badge.innerText = skill;
+                    container.appendChild(badge);
+                });
+
+                document.getElementById('skillCount').innerText = detectedSkills.length;
+
+                // Montagem e exibição da Query
+                const queryStr = detectedSkills.slice(0, 4).map(s => `"${s}"`).join(' OR ');
+                document.getElementById('booleanQueryDisplay').innerText = queryStr;
+
+                document.getElementById('resultsSection').classList.remove('hidden');
+            }, 300);
         }
 
         function executarBusca(tipo) {
-            if (extractedHardSkills.length === 0) {
-                alert('Nenhuma palavra-chave válida encontrada.');
-                return;
-            }
+            if (detectedSkills.length === 0) return;
 
-            const terms = extractedHardSkills.slice(0, 4).map(s => `"${s}"`).join(' OR ');
-            let url = '';
+            const terms = detectedSkills.slice(0, 4).map(s => `"${s}"`).join(' OR ');
+            let targetUrl = '';
 
             if (tipo === 'linkedin_jobs') {
-                url = `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(terms)}&location=São%20Paulo%2C%20Brasil`;
+                targetUrl = `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(terms)}&location=São%20Paulo%2C%20Brasil`;
             } else if (tipo === 'linkedin_feed') {
                 const query = `(${terms}) ("São Paulo" OR Remoto) (vaga OR contratando)`;
-                url = `https://www.linkedin.com/search/results/content/?keywords=${encodeURIComponent(query)}&sortBy=%22date_posted%22`;
+                targetUrl = `https://www.linkedin.com/search/results/content/?keywords=${encodeURIComponent(query)}&sortBy=%22date_posted%22`;
             } else if (tipo === 'google_ats') {
                 const query = `site:gupy.io OR site:lever.co OR site:greenhouse.io (${terms}) ("São Paulo" OR Remoto)`;
-                url = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+                targetUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
             }
 
-            if (url) window.open(url, '_blank');
+            if (targetUrl) window.open(targetUrl, '_blank');
         }
     </script>
 </body>
